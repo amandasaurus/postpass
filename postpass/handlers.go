@@ -60,6 +60,23 @@ func HandleInterpreter(
 		geojson, _ = strconv.ParseBool(tGeojson[0])
 	}
 
+	if r.Method == http.MethodGet {
+		tCacheFor := r.Form["cache_for"]
+		if tCacheFor == nil {
+			tCacheFor = r.Form["options[cache_for]"]
+		}
+		if tCacheFor != nil {
+			parsed, _ := strconv.ParseUint(tCacheFor[0], 10, 64)
+			cache_for := uint(parsed)
+			// 2 days is 172,800. Longer caching is v. unlikely to be needed.
+			if cache_for > 172800 {
+				cache_for = 172800
+			}
+
+			writer.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", cache_for))
+		}
+	}
+
 	id := Count.Add(1)
 
 	log.Printf("request #%d: query '%s' g=%t\n", id,

@@ -9,6 +9,7 @@
 * rename "properties" in GeoJSON FeatureCollection to "postpass_properties" in order to be GeoJSON compliant
 * rename "metadata" in JSON output to "postpass_properties" for consistency
 * Query can also be specified with the `q=` GET/POST param. `data=` still works
+* Add `cache_for` funtionality
 
 ## 0.2
 
