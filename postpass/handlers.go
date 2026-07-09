@@ -19,7 +19,15 @@ import (
  * and when EXPLAIN successful, sends the request to one of
  * three classes of worker.
  */
-func HandleInterpreter(db *sql.DB, slow chan<- WorkItem, medium chan<- WorkItem, quick chan<- WorkItem, writer http.ResponseWriter, r *http.Request) {
+func HandleInterpreter(
+	db *sql.DB,
+	slow chan<- WorkItem,
+	medium chan<- WorkItem,
+	quick chan<- WorkItem,
+	cfg *PostpassConfig,
+	writer http.ResponseWriter,
+	r *http.Request,
+) {
 	// create channel we want to receive the response on
 	rchan := make(chan SqlResponse, 1)
 	closeChan := make(chan struct{}, 1)
@@ -51,7 +59,7 @@ func HandleInterpreter(db *sql.DB, slow chan<- WorkItem, medium chan<- WorkItem,
 
 	log.Printf("request #%d: query '%s' g=%t\n", id,
 		strings.Join(strings.Fields(strings.TrimSpace(query)), " "),
-        geojson)
+		geojson)
 
 	var startTime = time.Now().UnixMilli()
 
@@ -74,10 +82,10 @@ func HandleInterpreter(db *sql.DB, slow chan<- WorkItem, medium chan<- WorkItem,
 	}
 
 	// ... and send to appropriate channel
-	if med < QuickMediumThreshold {
+	if med < cfg.QuickMediumThreshold {
 		log.Printf("request #%d: medium cost is %d, sending to quick worker\n", id, med)
 		quick <- work
-	} else if med < MediumSlowThreshold {
+	} else if med < cfg.MediumSlowThreshold {
 		log.Printf("request #%d: medium cost is %d, sending to medium worker\n", id, med)
 		medium <- work
 	} else {
@@ -108,15 +116,15 @@ func HandleInterpreter(db *sql.DB, slow chan<- WorkItem, medium chan<- WorkItem,
 
 	log.Printf("request #%d: completed after %dms, response size is %d\n",
 		id, elapsed, len(rv.result))
-	_,_  = fmt.Fprintf(writer, "%s", rv.result)
+	_, _ = fmt.Fprintf(writer, "%s", rv.result)
 }
 
-func HandleExplain(db *sql.DB, writer http.ResponseWriter, r *http.Request) {
+func HandleExplain(db *sql.DB, cfg *PostpassConfig, writer http.ResponseWriter, r *http.Request) {
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.Header().Set("Content-Type", "application/json")
 
 	// process GET/POST parameters
-	_  = r.ParseForm()
+	_ = r.ParseForm()
 	tData := r.Form["data"]
 	if tData == nil {
 		log.Printf("no data field given\n")
@@ -145,9 +153,9 @@ func HandleExplain(db *sql.DB, writer http.ResponseWriter, r *http.Request) {
 	response := map[string]any{"plan": full}
 
 	// ... and send the queue decision back to the client
-	if med < QuickMediumThreshold {
+	if med < cfg.QuickMediumThreshold {
 		response["queue"] = "quick"
-	} else if med < MediumSlowThreshold {
+	} else if med < cfg.MediumSlowThreshold {
 		response["queue"] = "medium"
 	} else {
 		response["queue"] = "slow"

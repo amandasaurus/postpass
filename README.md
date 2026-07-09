@@ -81,6 +81,44 @@ in front of Postpass, for example Apache:
       RewriteRule /api/(.*) http://localhost:8081/$1 [P]
     </VirtualHost>
 
+## Configuration
+
+postpass uses a configuration file.
+The default path is `${XDG_CONFIG_HOME}/postpass.yaml` (if not set `~/.config/postpass.yaml`).
+If no path is provided and the file does not exist it will be created with the default config.
+
+The database config can also be overridden using cli arguments (check `postpass-server -h`)
+
+```yaml
+database:
+  host: localhost
+  port: 5432
+  user: readonly
+  password: readonly
+  database_name: gis
+listen_port: 8081
+quick_medium_threshold: 150
+medium_slow_threshold: 150000
+```
+
+## Dev setup (for simple testing)
+
+> [!WARNING]
+> This is just for local testing and not secure in any way.
+> Please set permissions for the user used by postpass, otherwise users can edit your data.
+
+1. Download [postpass.lua](https://github.com/woodpeck/postpass-ops/blob/main/postpass.lua)
+1. Download any [`.osm.pbf`](https://download.geofabrik.de/)
+1. Build postpass (`make`)
+1. Run the following commands from different terminals
+
+```shell
+podman run --rm --network host -e POSTGRES_USER=postpass -e POSTGRES_PASSWORD=password docker.io/postgis/postgis:latest
+# set data folder to the actual location
+podman run --rm --network host -v ~/Downloads:/data:ro -e PGHOST=localhost -e PGUSER=postpass -e PGPASSWORD=password docker.io/iboates/osm2pgsql:latest -O flex -S /data/postpass.lua /data/data.osm.pbf
+./postpass-server --db-username postpass --db-password password --db-name postpass
+```
+
 ## Using
 
 ### `/interpreter`

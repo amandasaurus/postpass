@@ -11,6 +11,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,9 +29,45 @@ func main() {
 	// don't log timestamp since systemd already does
 	log.SetFlags(0)
 
+	var configPath = flag.String("c", "", "Filepath of the config file")
+	var dbHost = flag.String("db-host", "", "The postgis database host")
+	var dbPort = flag.Int("db-port", 0, "The port of the postgis database")
+	var dbUser = flag.String("db-username", "", "The username of the postgis user")
+	var dbPassword = flag.String("db-password", "", "The password of the postgis user")
+	var dbName = flag.String("db-name", "", "The name of the postgis database")
+	flag.Parse()
+
+	// Load config from file
+	var cfgPath *string
+	if *configPath != "" {
+		cfgPath = configPath
+	}
+	cfg, err := postpass.LoadConfig(cfgPath)
+	if err != nil {
+		log.Printf("error loading config file: %s\n", err)
+		panic(err)
+	}
+
+	// Override config file values if set from cli
+	if *dbHost != "" {
+		cfg.Database.Host = *dbHost
+	}
+	if *dbPort != 0 {
+		cfg.Database.Port = *dbPort
+	}
+	if *dbUser != "" {
+		cfg.Database.User = *dbUser
+	}
+	if *dbPassword != "" {
+		cfg.Database.Password = *dbPassword
+	}
+	if *dbName != "" {
+		cfg.Database.DatabaseName = *dbName
+	}
+
 	// open a connection to the database
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable options='-c statement_timeout=36000000'",
-		postpass.Host, postpass.Port, postpass.User, postpass.Password, postpass.DBName)
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.DatabaseName)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -77,14 +114,14 @@ func main() {
 
 	// set up callback for /interpreter URL
 	http.HandleFunc("/interpreter", func(w http.ResponseWriter, r *http.Request) {
-		postpass.HandleInterpreter(db, slow_jobs, medium_jobs, quick_jobs, w, r)
+		postpass.HandleInterpreter(db, slow_jobs, medium_jobs, quick_jobs, &cfg, w, r)
 	})
 	// set up callback for /explain URL
 	http.HandleFunc("/explain", func(w http.ResponseWriter, r *http.Request) {
-		postpass.HandleExplain(db, w, r)
+		postpass.HandleExplain(db, &cfg, w, r)
 	})
 
-	log.Printf("Listening on :%d", postpass.ListenPort)
+	log.Printf("Listening on :%d", cfg.ListenPort)
 	// endless loop
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", postpass.ListenPort), nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.ListenPort), nil))
 }
