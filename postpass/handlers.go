@@ -37,7 +37,9 @@ func HandleInterpreter(db *sql.DB, slow chan<- WorkItem, medium chan<- WorkItem,
 		http.Error(writer, "no data field given", http.StatusBadRequest)
 		return
 	}
-	data := tData[0]
+
+	// Append a newline at the end to escape single line comments
+	query := tData[0] + "\n"
 
 	geojson := true
 	tGeojson := r.Form["options[geojson]"]
@@ -48,12 +50,12 @@ func HandleInterpreter(db *sql.DB, slow chan<- WorkItem, medium chan<- WorkItem,
 	id := Count.Add(1)
 
 	log.Printf("request #%d: query '%s' g=%t\n", id,
-		strings.Join(strings.Fields(strings.TrimSpace(data)), " "),
+		strings.Join(strings.Fields(strings.TrimSpace(query)), " "),
         geojson)
 
 	var startTime = time.Now().UnixMilli()
 
-	_, from, to, err := explain(db, data, true)
+	_, from, to, err := explain(db, query, true)
 	if err != nil {
 		log.Printf("request #%d: error in EXPLAIN: '%s'\n", id, err.Error())
 		http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -65,7 +67,7 @@ func HandleInterpreter(db *sql.DB, slow chan<- WorkItem, medium chan<- WorkItem,
 
 	// create work item...
 	work := WorkItem{
-		request:    data,
+		request:    query,
 		geojson:    geojson,
 		response:   rchan,
 		closer:     closeChan,
@@ -121,14 +123,16 @@ func HandleExplain(db *sql.DB, writer http.ResponseWriter, r *http.Request) {
 		http.Error(writer, "no data field given", http.StatusBadRequest)
 		return
 	}
-	data := tData[0]
+
+	// Append a newline at the end to escape single line comments
+	query := tData[0] + "\n"
 
 	log.Printf("explain request: query '%s'\n",
-		strings.Join(strings.Fields(strings.TrimSpace(data)), " "))
+		strings.Join(strings.Fields(strings.TrimSpace(query)), " "))
 
 	var startTime = time.Now().UnixMilli()
 
-	full, from, to, err := explain(db, data, false)
+	full, from, to, err := explain(db, query, false)
 	if err != nil {
 		log.Printf("explain request: error in EXPLAIN: '%s'\n", err.Error())
 		http.Error(writer, err.Error(), http.StatusBadRequest)
