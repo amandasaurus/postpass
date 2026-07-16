@@ -38,16 +38,21 @@ func HandleInterpreter(
 	writer.Header().Set("Server", "Postpass API 0.2")
 
 	// process GET/POST parameters
+	// Prefer q= then data=
 	_ = r.ParseForm()
-	tData := r.Form["data"]
-	if tData == nil {
-		log.Printf("no data field given\n")
-		http.Error(writer, "no data field given", http.StatusBadRequest)
+	query := ""
+	if values, ok := r.Form["q"] ; ok {
+		query = values[0]
+	} else if values, ok := r.Form["data"] ; ok {
+		query = values[0]
+	} else {
+		log.Printf("no q/data field given\n")
+		http.Error(writer, "no query field given", http.StatusBadRequest)
 		return
 	}
 
 	// Append a newline at the end to escape single line comments
-	query := tData[0] + "\n"
+	query = query + "\n"
 
 	geojson := true
 	tGeojson := r.Form["options[geojson]"]

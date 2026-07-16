@@ -132,7 +132,7 @@ GET and POST requests are supported. Here's a simple test query that will load
 fast food POIs from your local osm2pgsql database. (schema is based on
 [postpass.geofabrik.de schema](https://github.com/woodpeck/postpass-ops)).
 
-    curl -G http://localhost:8081/interpreter --data-urlencode "data=
+    curl -G http://localhost:8081/interpreter --data-urlencode "q=
         SELECT tags->>'name' as name, geom 
         FROM postpass_point
         WHERE tags->>'amenity'='fast_food' 
@@ -149,7 +149,7 @@ A [PostgreSQL `EXPLAIN` output](https://www.postgresql.org/docs/current/sql-expl
 
 e.g.:
 
-    curl -G http://localhost:8081/explain --data-urlencode "data=SELECT tags->>'name' as name, geom FROM postpass_point"
+    curl -G http://localhost:8081/explain --data-urlencode "q=SELECT tags->>'name' as name, geom FROM postpass_point"
 
 ### LLM
 
@@ -186,7 +186,7 @@ Examples:
 
 1. Return geometries (default GeoJSON):
 
-> curl -G [https://postpass.geofabrik.de/api/0.2/interpreter](https://postpass.geofabrik.de/api/0.2/interpreter) --data-urlencode "data=
+> curl -G [https://postpass.geofabrik.de/api/0.2/interpreter](https://postpass.geofabrik.de/api/0.2/interpreter) --data-urlencode "q=
 > SELECT name, geom
 > FROM postpass\_point
 > WHERE tags->>'amenity' = 'fast\_food'
@@ -196,7 +196,7 @@ Examples:
 
 > curl -G [https://postpass.geofabrik.de/api/0.2/interpreter](https://postpass.geofabrik.de/api/0.2/interpreter)
 > \--data-urlencode "options\[geojson]=false"
-> \--data-urlencode "data=
+> \--data-urlencode "q=
 > SELECT
 > admin.tags->>'name' AS country,
 > COUNT(point.\*) AS ref\_count

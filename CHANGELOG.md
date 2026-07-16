@@ -8,6 +8,7 @@
 * drop "own_agg=false" option; we now always do the aggregation in the code, never in Postgres.
 * rename "properties" in GeoJSON FeatureCollection to "postpass_properties" in order to be GeoJSON compliant
 * rename "metadata" in JSON output to "postpass_properties" for consistency
+* Query can also be specified with the `q=` GET/POST param. `data=` still works
 
 ## 0.2
 
