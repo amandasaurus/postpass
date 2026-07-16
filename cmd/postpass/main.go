@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/goccy/go-yaml"
 	_ "github.com/lib/pq"
 	"postpass/postpass"
 )
@@ -30,6 +31,7 @@ func main() {
 	log.SetFlags(0)
 
 	var configPath = flag.String("c", "", "Filepath of the config file")
+	var printConfig = flag.Bool("print-config", false, "Print the out the config")
 	var dbHost = flag.String("db-host", "", "The postgis database host")
 	var dbPort = flag.Int("db-port", 0, "The port of the postgis database")
 	var dbUser = flag.String("db-username", "", "The username of the postgis user")
@@ -63,6 +65,16 @@ func main() {
 	}
 	if *dbName != "" {
 		cfg.Database.DatabaseName = *dbName
+	}
+
+	if *printConfig {
+		out, err := yaml.Marshal(cfg)
+		if err != nil {
+			log.Printf("error serializing config: %s\n", err)
+			panic(err)
+		}
+		fmt.Print(string(out))
+		return
 	}
 
 	// open a connection to the database

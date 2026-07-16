@@ -83,11 +83,14 @@ in front of Postpass, for example Apache:
 
 ## Configuration
 
-postpass uses a configuration file.
-The default path is `${XDG_CONFIG_HOME}/postpass.yaml` (if not set `~/.config/postpass.yaml`).
-If no path is provided and the file does not exist it will be created with the default config.
+postpass can be configured with a configuration file.
+The location of the config file can be determined using the `-c` flag.
+If no file is provided or values are not set default values are assumed.
+To see the default value run `postpass-server --print-config`.
+To create a config file with default values run `postpass-server --print-config > postpass.yaml`
 
-The database config can also be overridden using cli arguments (check `postpass-server -h`)
+The database config can also be overridden using cli arguments (check `postpass-server -h`).
+Those values are inserted after the config has been loaded, so the values will override the config.
 
 ```yaml
 database:
