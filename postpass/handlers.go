@@ -75,10 +75,10 @@ func HandleInterpreter(
 
 	// create work item...
 	work := WorkItem{
-		request:    query,
-		geojson:    geojson,
-		response:   rchan,
-		closer:     closeChan,
+		request:  query,
+		geojson:  geojson,
+		response: rchan,
+		closer:   closeChan,
 	}
 
 	// ... and send to appropriate channel

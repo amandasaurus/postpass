@@ -38,70 +38,70 @@ func Worker(db *sql.DB, id int, tasks <-chan WorkItem) {
 		var rows *sql.Rows
 		var err error
 
-        // this makes Postgres create GeoJSON for individual rows, 
-        // and aggregates them into a collection here instead of 
-        // using Postgres' json_agg function.
-        // A separate query is therefore needed to access the 
-        // metadata.
+		// this makes Postgres create GeoJSON for individual rows,
+		// and aggregates them into a collection here instead of
+		// using Postgres' json_agg function.
+		// A separate query is therefore needed to access the
+		// metadata.
 
-	var res = ""
-        var builder strings.Builder
-        var comma string
-        var line string
-        var jsonfunc string
+		var res = ""
+		var builder strings.Builder
+		var comma string
+		var line string
+		var jsonfunc string
 
-        rows, err = db.QueryContext(taskCtx, 
-            "SELECT value from osm2pgsql_properties where property='replication_timestamp'")
+		rows, err = db.QueryContext(taskCtx,
+			"SELECT value from osm2pgsql_properties where property='replication_timestamp'")
 
-        if err != nil {
-            goto sqlerror
-        }
+		if err != nil {
+			goto sqlerror
+		}
 
-        // if no rows are returned, no replication_timestamp has been set.
-        if (rows.Next()) {
-            err = rows.Scan(&res)
-            if err != nil {
-                goto sqlerror
-            }
-        }
-        _ = rows.Close()
+		// if no rows are returned, no replication_timestamp has been set.
+		if rows.Next() {
+			err = rows.Scan(&res)
+			if err != nil {
+				goto sqlerror
+			}
+		}
+		_ = rows.Close()
 
-        builder.WriteString("{ \n")
-        builder.WriteString(`"postpass_properties": { "generator": "Postpass API 0.2", "timestamp": "`)
-        builder.WriteString(res)
-        builder.WriteString(`"}, `)
-        builder.WriteString("\n")
-        if task.geojson {
-            builder.WriteString(`"type": "FeatureCollection", "features" : [ `)
-            jsonfunc = "ST_AsGeoJSON"
-        } else {
-            builder.WriteString(`"result" : [ `)
-            jsonfunc = "row_to_json"
-        }
-        builder.WriteString("\n")
+		builder.WriteString("{ \n")
+		builder.WriteString(`"postpass_properties": { "generator": "Postpass API 0.2", "timestamp": "`)
+		builder.WriteString(res)
+		builder.WriteString(`"}, `)
+		builder.WriteString("\n")
+		if task.geojson {
+			builder.WriteString(`"type": "FeatureCollection", "features" : [ `)
+			jsonfunc = "ST_AsGeoJSON"
+		} else {
+			builder.WriteString(`"result" : [ `)
+			jsonfunc = "row_to_json"
+		}
+		builder.WriteString("\n")
 
-        rows, err = db.QueryContext(taskCtx, fmt.Sprintf(
-            `SELECT %s(t.*) FROM (%s) as t;`, jsonfunc, task.request))
-        if err != nil {
-            goto sqlerror
-        }
+		rows, err = db.QueryContext(taskCtx, fmt.Sprintf(
+			`SELECT %s(t.*) FROM (%s) as t;`, jsonfunc, task.request))
+		if err != nil {
+			goto sqlerror
+		}
 
-        for rows.Next() {
-            err = rows.Scan(&line)
-            if err != nil {
-                break
-            }
-            builder.WriteString(comma)
-            builder.WriteString(line)
-            comma = ",\n"
-        }
+		for rows.Next() {
+			err = rows.Scan(&line)
+			if err != nil {
+				break
+			}
+			builder.WriteString(comma)
+			builder.WriteString(line)
+			comma = ",\n"
+		}
 
-        if err != nil {
-            goto sqlerror
-        }
+		if err != nil {
+			goto sqlerror
+		}
 
-        builder.WriteString("\n]}")
-        res = builder.String()
+		builder.WriteString("\n]}")
+		res = builder.String()
 
 		// discard result
 		_ = rows.Close()
@@ -111,11 +111,11 @@ func Worker(db *sql.DB, id int, tasks <-chan WorkItem) {
 		// send response back on channel
 		task.response <- SqlResponse{err: false, result: res}
 		Idle[id/100].Add(1)
-        continue
+		continue
 
-        sqlerror:
-        task.response <- SqlResponse{err: true, result: err.Error()}
-        Idle[id/100].Add(1)
-        continue
+	sqlerror:
+		task.response <- SqlResponse{err: true, result: err.Error()}
+		Idle[id/100].Add(1)
+		continue
 	}
 }
