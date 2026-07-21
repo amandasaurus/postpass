@@ -44,7 +44,7 @@ func Worker(db *sql.DB, id int, tasks <-chan WorkItem) {
         // A separate query is therefore needed to access the 
         // metadata.
 
-	var res string = ""
+	var res = ""
         var builder strings.Builder
         var comma string
         var line string
