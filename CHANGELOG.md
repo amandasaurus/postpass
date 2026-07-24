@@ -10,6 +10,7 @@
 * rename "metadata" in JSON output to "postpass_properties" for consistency
 * Query can also be specified with the `q=` GET/POST param. `data=` still works
 * Add `cache_for` funtionality
+* Don't error if there is no `osm2psql_properties` table
 
 ## 0.2
 
