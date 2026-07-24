@@ -50,26 +50,31 @@ func Worker(db *sql.DB, id int, tasks <-chan WorkItem) {
 		var line string
 		var jsonfunc string
 
+		builder.WriteString("{ \n")
+		builder.WriteString(`"postpass_properties": { "generator": "Postpass API 0.2"`)
+
 		rows, err = db.QueryContext(taskCtx,
 			"SELECT value from osm2pgsql_properties where property='replication_timestamp'")
 
-		if err != nil {
-			goto sqlerror
-		}
+		if err == nil {
+			// If there is an error here, don't include `timestamp` property.
+			// this also supports databases which don't have this table.
 
-		// if no rows are returned, no replication_timestamp has been set.
-		if rows.Next() {
-			err = rows.Scan(&res)
-			if err != nil {
-				goto sqlerror
+			// if no rows are returned, no replication_timestamp has been set.
+			if rows.Next() {
+				err = rows.Scan(&res)
+				if err != nil {
+					goto sqlerror
+				}
 			}
-		}
-		_ = rows.Close()
+			_ = rows.Close()
 
-		builder.WriteString("{ \n")
-		builder.WriteString(`"postpass_properties": { "generator": "Postpass API 0.2", "timestamp": "`)
-		builder.WriteString(res)
-		builder.WriteString(`"}, `)
+			builder.WriteString(`, "timestamp": "`)
+			builder.WriteString(res)
+			builder.WriteString(`"`)
+		}
+
+		builder.WriteString(` }, `)
 		builder.WriteString("\n")
 		if task.geojson {
 			builder.WriteString(`"type": "FeatureCollection", "features" : [ `)
