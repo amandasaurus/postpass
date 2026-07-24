@@ -151,6 +151,24 @@ e.g.:
 
     curl -G http://localhost:8081/explain --data-urlencode "q=SELECT tags->>'name' as name, geom FROM postpass_point"
 
+
+#### `cache_for`
+
+For `GET` requests, if the parameter `cache_for` is a number, then the response
+will include a `Cache-Control: max-age=X` HTTP header.
+
+e.g.: The following response will have `Cache-Control: max-age=10000` response header.
+
+    curl -G http://localhost:8081/interpreter --data-urlencode "cache_for=10000" --data-urlencode "data=SELECT tags->>'name' as name, geom FROM postpass_point limit 1"
+
+> [!IMPORTANT]
+> postpass does not do any caching of responses. This option merely allows the
+> user to specify a header that any intermediate proxies might use.
+
+If `cache_for` is unset, `options[cache_for]` will be checked. These options
+have no effect on `POST` requests. Very high `cache_for` settings will be
+clamped to a sensible max value (currently: 2 days).
+
 ### LLM
 
 This prompt helps to generate good results with LLMs like ChatGPT.
